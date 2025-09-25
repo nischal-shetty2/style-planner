@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "types": ["dom-speech-recognition"],
     "incremental": true,
     "plugins": [
       {
