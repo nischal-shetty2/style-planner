@@ -1,12 +1,4 @@
-interface WeatherData {
-  temperature: number;
-  condition: string;
-  precipitation: number;
-  windSpeed: number;
-  humidity: number;
-  description: string;
-  icon: string;
-}
+import type { WeatherData } from "@/lib/ai";
 
 export async function fetchWeatherData(
   lat: number,

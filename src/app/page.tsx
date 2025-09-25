@@ -55,7 +55,7 @@ export default function WeatherChatApp() {
     if (isListening) {
       dictationBaseRef.current = inputValue;
     }
-  }, [isListening, inputValue]);
+  }, [isListening]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isProcessing) return;
@@ -201,7 +201,8 @@ export default function WeatherChatApp() {
   };
 
   const handleInterimVoiceInput = (interim: string) => {
-    const base = (dictationBaseRef.current || inputValue).trimEnd();
+    // Use only the stable base captured at mic start or after final results
+    const base = dictationBaseRef.current.trimEnd();
     const needsSpace = base.length > 0 && !base.endsWith(" ");
     const newValue = interim
       ? `${base}${needsSpace ? " " : ""}${interim}`
@@ -227,7 +228,7 @@ export default function WeatherChatApp() {
     return () => {
       document.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [inputValue, isProcessing, handleSendMessage]);
+  }, [isProcessing, handleSendMessage]);
 
   // Keep the chat view anchored at the bottom on updates and during loading
   useEffect(() => {

@@ -129,7 +129,7 @@ export default function MicButton({
           case "network":
             errorMessage =
               language === "en"
-                ? "Network error. Please check your connection."
+                ? "Please check your connection, or use a different browser."
                 : "ネットワークエラー。接続を確認してください。";
             break;
         }

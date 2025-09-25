@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   extractLocationAndDateTime,
   generateClothingRecommendation,
+  WeatherData,
 } from "@/lib/ai";
 import { geocodeLocation } from "@/lib/geocode";
 import { fetchWeatherData } from "@/lib/weather";
@@ -62,11 +63,12 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Geocoded coordinates:", coordinates);
 
     // Step 3: Fetch weather data (date/time aware)
-    const weatherData = await fetchWeatherData(
+    const weatherData = (await fetchWeatherData(
       coordinates.lat,
       coordinates.lon,
       { date: useDate, time: useTime || undefined }
-    );
+    )) as WeatherData;
+
     if (!weatherData) {
       return NextResponse.json(
         { error: "Could not fetch weather data" },
