@@ -111,7 +111,7 @@ export interface ExtractedQueryInfo {
   time: string | null; // HH:mm (24h) or null if not specified
 }
 
-function parseJsonLoose<T = any>(raw: string): T | null {
+function parseJsonLoose<T = unknown>(raw: string): T | null {
   try {
     const cleaned = raw
       .replace(/^```[a-zA-Z]*\n?/, "")
@@ -190,7 +190,7 @@ No explanations, no code fences, no extra text.
     });
 
     const raw = text.trim();
-    let parsed: any = parseJsonLoose(raw);
+    const parsed = parseJsonLoose<ExtractedQueryInfo>(raw);
     if (!parsed) {
       console.error("Combined extraction JSON parse failed:", raw);
       // Fallback: return only location using previous extractor
@@ -219,10 +219,17 @@ No explanations, no code fences, no extra text.
   }
 }
 
+export interface WeatherData {
+  temperature: number;
+  condition: string;
+  precipitation?: number;
+  [key: string]: unknown;
+}
+
 export async function generateClothingRecommendation(
   query: string,
   location: string,
-  weatherData: any,
+  weatherData: WeatherData,
   language: "en" | "jp" = "jp"
 ): Promise<string> {
   try {
@@ -326,7 +333,7 @@ function getSeason(month: number, language: "en" | "jp" = "jp"): string {
 
 export async function generateActivityBasedRecommendation(
   activity: string,
-  weatherData: any,
+  weatherData: WeatherData,
   location: string,
   language: "en" | "jp" = "jp"
 ): Promise<string> {
@@ -382,7 +389,7 @@ Please provide specific and practical advice in English.
 
 export async function generateTimeBasedRecommendation(
   timeOfDay: string,
-  weatherData: any,
+  weatherData: WeatherData,
   location: string,
   language: "en" | "jp" = "jp"
 ): Promise<string> {

@@ -5,7 +5,7 @@ import { Globe } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 
 export default function LanguageToggle() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "jp" : "en");

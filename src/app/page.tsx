@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import MicButton from "@/components/mic-button";
 import StepLoader from "@/components/step-loader";
 import OutfitPlan from "@/components/outfit-plan";
@@ -55,9 +55,9 @@ export default function WeatherChatApp() {
     if (isListening) {
       dictationBaseRef.current = inputValue;
     }
-  }, [isListening]);
+  }, [isListening, inputValue]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isProcessing) return;
 
     const userMessage: Message = {
@@ -100,7 +100,9 @@ export default function WeatherChatApp() {
               }
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error("Geocode error:", e);
+        }
       })();
 
       setCurrentStep(3); // Fetching weather
@@ -175,7 +177,18 @@ export default function WeatherChatApp() {
       setCurrentStep(0);
       setIsLocating(false);
     }
-  };
+  }, [
+    inputValue,
+    isProcessing,
+    setMessages,
+    setInputValue,
+    setIsProcessing,
+    setCurrentStep,
+    setIsLocating,
+    t,
+    language,
+    setPreviewCoords,
+  ]);
 
   const handleVoiceInput = (transcript: string) => {
     if (!transcript) return;
@@ -291,9 +304,9 @@ export default function WeatherChatApp() {
                 placeholder={t("inputPlaceholder")}
                 autoFocus
                 className="border-0 bg-transparent focus-visible:ring-0 text-card-foreground placeholder:text-muted-foreground"
-                onKeyDown={(e) => {
-                  e.key === "Enter" && !isProcessing && handleSendMessage();
-                }}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !isProcessing && handleSendMessage()
+                }
                 disabled={isProcessing}
               />
               <MicButton

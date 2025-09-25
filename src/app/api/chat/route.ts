@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     const extracted = await extractLocationAndDateTime(
       message,
-      language as any,
+      language as "en" | "jp",
       nowISODate,
       nowTime
     );

@@ -22,7 +22,7 @@ interface WeatherCardProps {
   };
 }
 
-const getWeatherIcon = (condition: string, iconCode: string) => {
+const getWeatherIcon = (condition: string) => {
   const iconClass = "h-8 w-8";
 
   switch (condition.toLowerCase()) {
@@ -51,7 +51,7 @@ export default function WeatherCard({ location, weather }: WeatherCardProps) {
               {weather.description}
             </p>
           </div>
-          {getWeatherIcon(weather.condition, weather.icon)}
+          {getWeatherIcon(weather.condition)}
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">

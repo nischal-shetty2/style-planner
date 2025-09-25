@@ -91,11 +91,11 @@ export default function OutfitPlan({
             ""
           );
         if (normalized) {
-          (result as any)[current] += normalized + "\n";
+          (result as Record<string, string>)[current] += normalized + "\n";
         }
         continue;
       }
-      (result as any)[current] += line + "\n";
+      (result as Record<string, string>)[current] += line + "\n";
     }
 
     // 3) Final heuristic: if everything empty, take first 3 lines as main

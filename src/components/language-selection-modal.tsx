@@ -9,7 +9,7 @@ import { useLanguage, type Language } from "@/context/language-context";
 export default function LanguageSelectionModal() {
   const [showModal, setShowModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>("jp");
-  const { setLanguage, t } = useLanguage();
+  const { setLanguage } = useLanguage();
 
   useEffect(() => {
     // Check if this is the user's first visit

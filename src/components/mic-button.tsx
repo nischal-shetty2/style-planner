@@ -32,9 +32,8 @@ export default function MicButton({
 }: MicButtonProps) {
   const [isSupported, setIsSupported] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [interimTranscript, setInterimTranscript] = useState("");
-  const recognitionRef = useRef<any>(null);
-  const { language, t } = useLanguage();
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const { language } = useLanguage();
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -43,7 +42,12 @@ export default function MicButton({
     }
 
     const SpeechRecognition =
-      window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+      window.SpeechRecognition ||
+      (
+        window as typeof window & {
+          webkitSpeechRecognition?: SpeechRecognitionConstructor;
+        }
+      ).webkitSpeechRecognition;
     if (SpeechRecognition) {
       setIsSupported(true);
       recognitionRef.current = new SpeechRecognition();
@@ -58,7 +62,7 @@ export default function MicButton({
         setIsProcessing(false);
       };
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         let interimTranscript = "";
         let finalTranscript = "";
 
@@ -70,8 +74,6 @@ export default function MicButton({
             interimTranscript += transcript;
           }
         }
-
-        setInterimTranscript(interimTranscript || finalTranscript);
 
         if (interimTranscript && onInterimTranscript) {
           onInterimTranscript(interimTranscript);
@@ -95,7 +97,7 @@ export default function MicButton({
         }
       };
 
-      recognitionRef.current.onerror = (event: any) => {
+      recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error("Speech recognition error:", event.error);
         setIsListening(false);
         setIsProcessing(false);
@@ -145,7 +147,7 @@ export default function MicButton({
           : "非対応ブラウザ: このブラウザは音声認識に対応していません。Chrome をお使いください。"
       );
     }
-  }, [onTranscript, setIsListening, toast, language, t]);
+  }, [onTranscript, setIsListening, language, onInterimTranscript]);
 
   useEffect(() => {
     if (recognitionRef.current) {

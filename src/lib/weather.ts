@@ -118,9 +118,16 @@ export async function fetchForecastData(
     }
 
     const data = await response.json();
+    interface ForecastItem {
+      main: { temp: number; humidity: number };
+      weather: { main: string; description: string; icon: string }[];
+      pop: number;
+      wind?: { speed: number };
+      dt: number;
+    }
 
     // Get next 24 hours of forecasts (8 x 3-hour intervals)
-    return data.list.slice(0, 8).map((item: any) => ({
+    return data.list.slice(0, 8).map((item: ForecastItem) => ({
       temperature: Math.round(item.main.temp),
       condition: item.weather[0].main,
       precipitation: item.pop * 100, // Probability of precipitation

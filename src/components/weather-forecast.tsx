@@ -38,8 +38,10 @@ const JAPANESE_CITIES = [
   { name: "Sapporo", nameJa: "札幌", lat: 43.0642, lon: 141.3469 },
 ];
 
-function getWeatherIcon(condition: string, iconCode: string) {
-  const iconMap: { [key: string]: any } = {
+function getWeatherIcon(condition: string) {
+  const iconMap: {
+    [key: string]: React.ComponentType<{ className?: string }>;
+  } = {
     Clear: Sun,
     Clouds: Cloud,
     Rain: CloudRain,
@@ -180,10 +182,7 @@ export default function WeatherForecast() {
                   </div>
                   <div className="flex items-center gap-2 ml-auto">
                     <div className="text-primary">
-                      {getWeatherIcon(
-                        detailedWeather.condition,
-                        detailedWeather.icon
-                      )}
+                      {getWeatherIcon(detailedWeather.condition)}
                     </div>
                     <span className="text-3xl font-bold text-foreground">
                       {detailedWeather.temperature}°C
@@ -244,10 +243,7 @@ export default function WeatherForecast() {
                                   : `${(index + 1) * 3}${t("hoursLater")}`}
                               </div>
                               <div className="flex justify-center mb-2 text-primary">
-                                {getWeatherIcon(
-                                  forecast.condition,
-                                  forecast.icon
-                                )}
+                                {getWeatherIcon(forecast.condition)}
                               </div>
                               <div className="font-semibold text-sm">
                                 {forecast.temperature}°C
@@ -286,7 +282,7 @@ export default function WeatherForecast() {
                     {language === "en" ? city.name : city.nameJa}
                   </h3>
                   <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                    {getWeatherIcon(city.condition, city.icon)}
+                    {getWeatherIcon(city.condition)}
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-foreground mb-1">

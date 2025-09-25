@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
 // Dynamically import react-leaflet to avoid SSR issues
+// Use 'as any' for dynamic imports to avoid type errors with Next.js and react-leaflet
 const MapContainer = dynamic(
   async () => (await import("react-leaflet")).MapContainer,
   { ssr: false }
-) as unknown as any;
+) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const TileLayer = dynamic(
   async () => (await import("react-leaflet")).TileLayer,
   { ssr: false }
-) as unknown as any;
+) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const Marker = dynamic(async () => (await import("react-leaflet")).Marker, {
   ssr: false,
-}) as unknown as any;
+}) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // Lightweight Leaflet CSS injection (avoids global import in layout)
 function useLeafletCss() {
