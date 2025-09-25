@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useLanguage } from "@/context/language-context";
 import { Send, Cloud } from "lucide-react";
+import MapPreview from "@/components/map-preview";
 
 interface Message {
   id: string;
@@ -42,6 +43,12 @@ export default function WeatherChatApp() {
   const [currentStep, setCurrentStep] = useState(0);
   const { t, language } = useLanguage();
   const dictationBaseRef = useRef("");
+  const [previewCoords, setPreviewCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   // Capture the current input as the dictation base when mic starts
   useEffect(() => {
@@ -65,6 +72,7 @@ export default function WeatherChatApp() {
     setInputValue("");
     setIsProcessing(true);
     setCurrentStep(0);
+    setIsLocating(false);
 
     try {
       setCurrentStep(1); // Processing voice input
@@ -72,6 +80,28 @@ export default function WeatherChatApp() {
 
       setCurrentStep(2); // Fetching location
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      (async () => {
+        try {
+          setIsLocating(true);
+          const q = encodeURIComponent(currentInput);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+            { headers: { "Accept-Language": language === "en" ? "en" : "ja" } }
+          );
+          if (res.ok) {
+            const arr = await res.json();
+            if (Array.isArray(arr) && arr.length > 0) {
+              const item = arr[0];
+              const lat = Number.parseFloat(item.lat);
+              const lon = Number.parseFloat(item.lon);
+              if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                setPreviewCoords({ lat, lon });
+              }
+            }
+          }
+        } catch (e) {}
+      })();
 
       setCurrentStep(3); // Fetching weather
       const response = await fetch("/api/chat", {
@@ -111,6 +141,14 @@ export default function WeatherChatApp() {
 
       setMessages((prev) => [...prev, aiMessage]);
 
+      // Update preview to authoritative API coordinates
+      if (data?.coordinates?.lat && data?.coordinates?.lon) {
+        setPreviewCoords({
+          lat: data.coordinates.lat,
+          lon: data.coordinates.lon,
+        });
+      }
+
       toast(t("completed"), {
         description:
           language === "en"
@@ -135,6 +173,7 @@ export default function WeatherChatApp() {
     } finally {
       setIsProcessing(false);
       setCurrentStep(0);
+      setIsLocating(false);
     }
   };
 
@@ -176,6 +215,11 @@ export default function WeatherChatApp() {
       document.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, [inputValue, isProcessing, handleSendMessage]);
+
+  // Keep the chat view anchored at the bottom on updates and during loading
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isProcessing]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -226,6 +270,16 @@ export default function WeatherChatApp() {
               )}
             </div>
           ))}
+          {/* Show map during loading (skeleton) or when coordinates are known */}
+          {(isProcessing || previewCoords) && (
+            <div className="mt-2">
+              <MapPreview
+                coordinates={previewCoords || undefined}
+                isLoading={isLocating || isProcessing}
+              />
+            </div>
+          )}
+          <div ref={bottomRef} />
         </div>
 
         {!isProcessing && (

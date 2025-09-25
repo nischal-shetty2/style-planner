@@ -29,9 +29,9 @@ const translations = {
 
     // Main interface
     inputPlaceholder: "Ask about the weather...",
-    exampleQuery1: "What's the weather in Tokyo today?",
-    exampleQuery2: "Will it rain in Osaka tomorrow?",
-    exampleQuery3: "What's the temperature in Shibuya?",
+    exampleQuery1: "Visiting the SkyTree building today, what should I wear?",
+    exampleQuery2: "What should I wear to McDonald's in Mangalore?",
+    exampleQuery3: "I have a meeting in Burj Khalifa.",
 
     // Weather forecast section
     majorCitiesWeather: "Major Cities Weather",
@@ -43,7 +43,7 @@ const translations = {
     precipitation: "Precipitation",
 
     // Step loader
-    processingVoice: "Processing voice input...",
+    processingVoice: "Processing input...",
     fetchingLocation: "Fetching location details...",
     fetchingWeather: "Fetching weather data...",
     generatingOutfit: "Generating outfit suggestions...",
