@@ -22,25 +22,31 @@ export default function StepLoader({ currentStep }: StepLoaderProps) {
       <div className="bg-card border border-border rounded-lg p-6 shadow-md">
         <div className="space-y-4">
           {steps.map((step, index) => (
-            <div key={index} className="flex items-center gap-3">
+            <div
+              key={index}
+              className={`flex items-center gap-3 transition-all duration-300 ${
+                index < currentStep ? "scale-95 opacity-80" : ""
+              }`}>
               <div className="flex-shrink-0">
                 {index < currentStep ? (
-                  <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center step-complete">
-                    <Check className="w-3 h-3 text-primary-foreground" />
+                  <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center transition-all duration-300">
+                    <Check className="w-2.5 h-2.5 text-primary-foreground" />
                   </div>
                 ) : index === currentStep ? (
-                  <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                    <Loader2 className="w-3 h-3 text-primary-foreground animate-spin" />
+                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center transition-all duration-300">
+                    <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
                   </div>
                 ) : (
-                  <div className="w-5 h-5 bg-muted rounded-full" />
+                  <div className="w-5 h-5 bg-muted rounded-full transition-all duration-300" />
                 )}
               </div>
               <span
-                className={`text-sm ${
-                  index <= currentStep
-                    ? "text-foreground"
-                    : "text-muted-foreground"
+                className={`transition-all duration-300 ${
+                  index < currentStep
+                    ? "text-xs text-muted-foreground"
+                    : index === currentStep
+                    ? "text-base font-medium text-foreground"
+                    : "text-sm text-muted-foreground"
                 }`}>
                 {step}
               </span>

@@ -62,7 +62,6 @@ export default function MapPreview({
 
   return (
     <div className="relative w-full h-56 rounded-lg overflow-hidden border border-border bg-muted/20">
-      {/* Guard for SSR: MapContainer renders only on client via dynamic import */}
       {effectiveCenter ? (
         <MapContainer
           key={mapKey}
@@ -82,8 +81,8 @@ export default function MapPreview({
         <div className="w-full h-full animate-pulse bg-muted" />
       )}
       {isLoading && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded-md bg-background/80 border border-border text-muted-foreground">
+        <div className=" pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl px-2 py-1 rounded-md animate-pulse text-muted-foreground">
             Locating…
           </div>
         </div>

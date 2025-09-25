@@ -48,7 +48,6 @@ export default function WeatherChatApp() {
     lon: number;
   } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   // Capture the current input as the dictation base when mic starts
   useEffect(() => {
@@ -230,11 +229,6 @@ export default function WeatherChatApp() {
     };
   }, [isProcessing, handleSendMessage]);
 
-  // Keep the chat view anchored at the bottom on updates and during loading
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isProcessing]);
-
   return (
     <div className="min-h-screen bg-background">
       <LanguageSelectionModal />
@@ -284,17 +278,19 @@ export default function WeatherChatApp() {
               )}
             </div>
           ))}
-          {/* Show map during loading (skeleton) or when coordinates are known */}
-          {(isProcessing || previewCoords) && (
-            <div className="mt-2">
-              <MapPreview
-                coordinates={previewCoords || undefined}
-                isLoading={isLocating || isProcessing}
-              />
-            </div>
-          )}
-          <div ref={bottomRef} />
         </div>
+
+        {isProcessing && <StepLoader currentStep={currentStep} />}
+
+        {/* Show map during loading (skeleton) or when coordinates are known */}
+        {(isProcessing || previewCoords) && (
+          <div className=" mt-5 mb-10">
+            <MapPreview
+              coordinates={previewCoords || undefined}
+              isLoading={isLocating || isProcessing}
+            />
+          </div>
+        )}
 
         {!isProcessing && (
           <div className="max-w-2xl mx-auto">
@@ -348,8 +344,6 @@ export default function WeatherChatApp() {
             </div>
           </div>
         )}
-
-        {isProcessing && <StepLoader currentStep={currentStep} />}
       </div>
 
       <Toaster />

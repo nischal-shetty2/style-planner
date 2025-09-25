@@ -33,7 +33,6 @@ export async function fetchWeatherData(
       if (!forecastRes.ok) {
         throw new Error(`Forecast API error: ${forecastRes.status}`);
       }
-      console.log("Forecast response:", forecastRes);
       const forecastData = await forecastRes.json();
       // Find the forecast entry closest to requested time on requested date (default to 12:00)
       const target = new Date(options!.date!);

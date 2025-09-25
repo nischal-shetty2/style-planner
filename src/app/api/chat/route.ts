@@ -18,8 +18,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[v0] Processing message:", message, "Language:", language);
-
     // Step 1: Extract location and date/time in one AI call. Provide current context.
     const now = new Date();
     const nowDate = new Date(now.getTime());
@@ -48,9 +46,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[v0] Extracted location:", location);
-    console.log("[v0] Extracted date:", useDate, "time:", useTime);
-
     // Step 2: Geocode location to get coordinates
     const coordinates = await geocodeLocation(location);
     if (!coordinates) {
@@ -59,8 +54,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    console.log("[v0] Geocoded coordinates:", coordinates);
 
     // Step 3: Fetch weather data (date/time aware)
     const weatherData = (await fetchWeatherData(
@@ -76,8 +69,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[v0] Weather data retrieved:", weatherData);
-
     // Step 4: Generate clothing recommendation
     const recommendation = await generateClothingRecommendation(
       message,
@@ -85,8 +76,6 @@ export async function POST(request: NextRequest) {
       weatherData,
       language
     );
-
-    console.log("[v0] Generated recommendation");
 
     return NextResponse.json({
       location: coordinates.name,
@@ -100,7 +89,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[v0] Chat API error:", error);
+    console.error("Chat API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

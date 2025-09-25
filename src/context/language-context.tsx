@@ -24,8 +24,9 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 const translations = {
   en: {
     // App title and description
-    appTitle: "Weather Outfit Assistant",
-    appDescription: "Ask about weather using voice or text",
+    appTitle: "Style Planner",
+    appDescription:
+      "Ask about your plans with your location using voice or text",
 
     // Main interface
     inputPlaceholder: "Ask about the weather...",
@@ -78,8 +79,9 @@ const translations = {
   },
   jp: {
     // App title and description
-    appTitle: "天気服装アシスタント",
-    appDescription: "音声またはテキストで天気について質問してください",
+    appTitle: "スタイルプランナー",
+    appDescription:
+      "音声またはテキストを使用して、現在地から予定について問い合わせる",
 
     // Main interface
     inputPlaceholder: "天気について聞いてください...",

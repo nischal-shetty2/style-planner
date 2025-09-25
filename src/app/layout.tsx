@@ -8,9 +8,8 @@ import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Weather Outfit Assistant",
+  title: "Style Planner",
   description: "AI-powered weather clothing recommendations",
-  generator: "v0.app",
 };
 
 export default function RootLayout({
@@ -21,7 +20,40 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "60vh",
+                color: "#444",
+                fontSize: "1.2rem",
+                gap: "1.5rem",
+              }}>
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ animation: "spin 1s linear infinite" }}>
+                <circle
+                  cx="24"
+                  cy="24"
+                  r="20"
+                  stroke="#888"
+                  strokeWidth="4"
+                  strokeDasharray="100 40"
+                  strokeLinecap="round"
+                />
+                <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+              </svg>
+              <span>Loading your assistant...</span>
+            </div>
+          }>
           <LanguageProvider>{children}</LanguageProvider>
         </Suspense>
         {/* <Analytics /> */}

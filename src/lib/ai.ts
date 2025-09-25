@@ -51,7 +51,6 @@ Good examples:
       model: google("gemini-1.5-flash"),
       prompt: prompts[language],
     });
-    console.log("Location extraction text:", text);
 
     return text.trim() || (language === "en" ? "Tokyo, Japan" : "Tokyo, Japan");
   } catch (error) {

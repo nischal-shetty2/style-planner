@@ -111,9 +111,6 @@ export default function OutfitPlan({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          {t("todaysOutfit")}
-        </h2>
         <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <MapPin className="w-4 h-4" />
@@ -124,6 +121,9 @@ export default function OutfitPlan({
             <span>{weather.temperature}°C</span>
           </div>
         </div>
+        <h2 className="text-2xl font-bold text-foreground mt-2">
+          {t("todaysOutfit")}
+        </h2>
       </div>
 
       <div className="outfit-card bg-card border border-border rounded-lg p-6 shadow-md">

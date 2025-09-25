@@ -51,8 +51,8 @@ export default function LanguageSelectionModal() {
               </h2>
               <p className="text-muted-foreground">
                 {selectedLanguage === "en"
-                  ? "Choose your preferred language for the weather assistant"
-                  : "天気アシスタントの言語を選択してください"}
+                  ? "Choose your preferred language for your style assistant"
+                  : "スタイルアシスタントの優先言語を選択してください"}
               </p>
             </div>
 
@@ -68,9 +68,7 @@ export default function LanguageSelectionModal() {
                   <div className="text-2xl">🇺🇸</div>
                   <div className="text-left">
                     <div className="font-medium">English</div>
-                    <div className="text-sm opacity-70">
-                      Weather Outfit Assistant
-                    </div>
+                    <div className="text-sm opacity-70">Style Planner</div>
                   </div>
                 </div>
                 {selectedLanguage === "en" && (
@@ -89,9 +87,7 @@ export default function LanguageSelectionModal() {
                   <div className="text-2xl">🇯🇵</div>
                   <div className="text-left">
                     <div className="font-medium">日本語</div>
-                    <div className="text-sm opacity-70">
-                      天気服装アシスタント
-                    </div>
+                    <div className="text-sm opacity-70">スタイルプランナー</div>
                   </div>
                 </div>
                 {selectedLanguage === "jp" && (
