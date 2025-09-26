@@ -18,11 +18,14 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const audio = formData.get("audio");
     const languageRaw = formData.get("language");
-    const language =
-      typeof languageRaw === "string" &&
-      (languageRaw === "en" || languageRaw === "ja")
-        ? languageRaw
-        : undefined; // let Whisper auto-detect if not provided
+    // Normalize UI language to Whisper's expected codes. Accept "jp" and map to "ja".
+    const language = (() => {
+      if (typeof languageRaw !== "string") return undefined;
+      const normalized = languageRaw === "jp" ? "ja" : languageRaw;
+      return normalized === "en" || normalized === "ja"
+        ? normalized
+        : undefined;
+    })(); // let Whisper auto-detect if not provided
 
     if (!audio || !(audio instanceof Blob)) {
       return NextResponse.json(
@@ -37,7 +40,7 @@ export async function POST(req: NextRequest) {
     const transcription = await groq.audio.transcriptions.create({
       file,
       model: "whisper-large-v3-turbo",
-      // Map UI language to model hint; omit to allow auto-detection when undefined
+      // Provide language hint when available (e.g., "ja" for Japanese)
       ...(language ? { language } : {}),
     });
 

@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Style Planner | スタイルプランナー</h1>
-  <p>AI-powered weather based clothing recommendation app | AI搭載の天気・服装提案アプリ</p>
+  <p>AI-powered weather based clothing recommendation app | AI を活用した気象ベースの衣類推奨アプリ</p>
 </div>
 
 ---
@@ -57,7 +57,7 @@
 
 - **Framework:** Next.js
 - **Styling:** Tailwind CSS, Geist UI, shadcn/ui
-- **AI & NLP:** Groq-sqk, llama, Whisper
+- **AI & NLP:** Groq-sdk, llama, Whisper
 - **Maps:** Leaflet, React-Leaflet, Geocode, OpenWeatherMaps
 - **Icons:** Lucide, Radix UI
 - **State & Context:** React Context API
