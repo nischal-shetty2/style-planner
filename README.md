@@ -39,17 +39,17 @@
 
 ---
 
-## Demo
+## Architecture
 
-![App Screenshot](public/file.svg)
+![App Screenshot](public/style-planner-ai.png)
 
 ---
 
 ## Tech Stack
 
-### Disclaimer: voice input only works on Google Chrome or Safari and does not work on browsers such as Brave or Firefox
+### Disclaimer: Live voice input works on Google Chrome or Safari and transcript voice on other browsers.
 
-### 注意: 音声入力は Google Chrome または Safari でのみ動作し、Brave や Firefox などのブラウザでは動作しません
+### 免責事項: ライブ音声入力は Google Chrome または Safari で機能し、トランスクリプト音声は他のブラウザで機能します。
 
 ---
 
@@ -57,8 +57,8 @@
 
 - **Framework:** Next.js
 - **Styling:** Tailwind CSS, Geist UI, shadcn/ui
-- **AI & NLP:** [ai-sdk](https://sdk.vercel.ai/), Google Gemini
-- **Maps:** Leaflet, React-Leaflet
+- **AI & NLP:** Groq-sqk, llama, Whisper
+- **Maps:** Leaflet, React-Leaflet, Geocode, OpenWeatherMaps
 - **Icons:** Lucide, Radix UI
 - **State & Context:** React Context API
 - **TypeScript** for type safety
