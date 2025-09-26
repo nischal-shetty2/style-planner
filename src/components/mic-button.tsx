@@ -11,7 +11,7 @@ declare global {
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Loader2 } from "lucide-react";
+import { Mic, Loader2, Pause } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/language-context";
 
@@ -214,7 +214,7 @@ export default function MicButton({
           {isProcessing ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : isListening ? (
-            <MicOff className="h-5 w-5" />
+            <Pause className="h-5 w-5" />
           ) : (
             <Mic className="h-5 w-5" />
           )}
@@ -263,7 +263,7 @@ const SoundWave = ({ isListening }: { isListening: boolean }) => {
 };
 
 // Real-time transcript display component
-const TranscriptDisplay = ({
+export const TranscriptDisplay = ({
   isListening,
   language,
 }: {

@@ -1,13 +1,44 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+
+// BrowserSpeechDisclaimer component (must be outside main export)
+function BrowserSpeechDisclaimer({ language }: { language: string }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isSpeechSupported =
+      "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
+    // Detect Brave or Firefox or other unsupported browsers
+    const ua = navigator.userAgent;
+    const isBrave =
+      (navigator as any).brave &&
+      typeof (navigator as any).brave.isBrave === "function";
+    const isFirefox = ua.includes("Firefox");
+
+    if (!isSpeechSupported || isBrave || isFirefox) {
+      setShow(true);
+    }
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="mb-4 p-3 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-900 text-sm text-center">
+      {language === "en"
+        ? "Voice input may not work in this browser. For best results, use Google Chrome or Safari. Brave and Firefox etc do not fully support the Web Speech API."
+        : "このブラウザでは音声入力が正しく動作しない場合があります。Google ChromeまたはSafariのご利用を推奨します。Brave、FirefoxはWeb Speech APIに完全対応していません。"}
+    </div>
+  );
+}
+
 import MicButton from "@/components/mic-button";
+import MicButtonFallback from "@/components/mic-button-fallback";
+import { shouldUseMicFallback } from "@/lib/browser-utils";
 import StepLoader from "@/components/step-loader";
 import OutfitPlan from "@/components/outfit-plan";
 import WeatherForecast from "@/components/weather-forecast";
 import LanguageSelectionModal from "@/components/language-selection-modal";
-import LanguageToggle from "@/components/language-toggle";
-import { Input } from "@/components/ui/input";
+import { LanguageToggle, NewChatButton } from "@/components/util-buttons";
+import { Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -39,6 +70,14 @@ export default function WeatherChatApp() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  // Detect browser support for Web Speech API or fallback
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setUseFallback(shouldUseMicFallback());
+    }
+  }, []);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const { t, language } = useLanguage();
@@ -55,6 +94,18 @@ export default function WeatherChatApp() {
       dictationBaseRef.current = inputValue;
     }
   }, [isListening]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autosize textarea to fit content
+  const autosizeTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => {
+    autosizeTextarea();
+  }, [inputValue, autosizeTextarea]);
 
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isProcessing) return;
@@ -234,8 +285,9 @@ export default function WeatherChatApp() {
       <LanguageSelectionModal />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex gap-4 justify-end mb-4">
           <LanguageToggle />
+          <NewChatButton />
         </div>
 
         <div className="text-center mb-12">
@@ -280,8 +332,6 @@ export default function WeatherChatApp() {
           ))}
         </div>
 
-        {isProcessing && <StepLoader currentStep={currentStep} />}
-
         {/* Show map during loading (skeleton) or when coordinates are known */}
         {(isProcessing || previewCoords) && (
           <div className=" mt-5 mb-10">
@@ -292,27 +342,45 @@ export default function WeatherChatApp() {
           </div>
         )}
 
+        {isProcessing && <StepLoader currentStep={currentStep} />}
         {!isProcessing && (
           <div className="max-w-2xl mx-auto">
+            {/* Browser compatibility disclaimer */}
+            <BrowserSpeechDisclaimer language={language} />
             <div className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 shadow-md">
-              <Input
+              <Textarea
+                ref={textareaRef as any}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
+                onInput={autosizeTextarea}
                 placeholder={t("inputPlaceholder")}
                 autoFocus
-                className="border-0 bg-transparent focus-visible:ring-0 text-card-foreground placeholder:text-muted-foreground"
-                onKeyDown={(e) =>
-                  e.key === "Enter" && !isProcessing && handleSendMessage()
-                }
+                rows={1}
+                className="border-0 bg-transparent focus-visible:ring-0 text-card-foreground placeholder:text-muted-foreground max-h-48 overflow-y-auto"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!isProcessing) handleSendMessage();
+                  }
+                }}
                 disabled={isProcessing}
               />
-              <MicButton
-                onTranscript={handleVoiceInput}
-                onInterimTranscript={handleInterimVoiceInput}
-                isListening={isListening}
-                setIsListening={setIsListening}
-                disabled={isProcessing}
-              />
+              {useFallback ? (
+                <MicButtonFallback
+                  onTranscript={handleVoiceInput}
+                  isListening={isListening}
+                  setIsListening={setIsListening}
+                  disabled={isProcessing}
+                />
+              ) : (
+                <MicButton
+                  onTranscript={handleVoiceInput}
+                  onInterimTranscript={handleInterimVoiceInput}
+                  isListening={isListening}
+                  setIsListening={setIsListening}
+                  disabled={isProcessing}
+                />
+              )}
               <Button
                 onClick={handleSendMessage}
                 size="icon"
@@ -323,24 +391,24 @@ export default function WeatherChatApp() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              <button
+              <Button
                 onClick={() => setInputValue(t("exampleQuery1"))}
                 className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isProcessing}>
                 {t("exampleQuery1")}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setInputValue(t("exampleQuery2"))}
                 className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isProcessing}>
                 {t("exampleQuery2")}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setInputValue(t("exampleQuery3"))}
                 className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isProcessing}>
                 {t("exampleQuery3")}
-              </button>
+              </Button>
             </div>
           </div>
         )}

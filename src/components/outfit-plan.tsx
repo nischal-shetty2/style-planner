@@ -7,6 +7,7 @@ import {
   MapPin,
   Thermometer,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useLanguage } from "@/context/language-context";
 
 interface OutfitPlanProps {
@@ -108,48 +109,134 @@ export default function OutfitPlan({
 
   const sections = parseRecommendation(recommendation);
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin className="w-4 h-4" />
-            <span>{location}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Thermometer className="w-4 h-4" />
-            <span>{weather.temperature}°C</span>
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-foreground mt-2">
-          {t("todaysOutfit")}
-        </h2>
-      </div>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
 
-      <div className="outfit-card bg-card border border-border rounded-lg p-6 shadow-md">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Shirt className="w-5 h-5 text-primary" />
+  const cardVariants = {
+    hidden: {
+      opacity: 0,
+      y: 20,
+      scale: 0.95,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: [0.25, 0.1, 0.25, 1] as const,
+      },
+    },
+  };
+
+  const iconVariants = {
+    hover: {
+      scale: 1.1,
+      rotate: 5,
+      transition: { duration: 0.2 },
+    },
+  };
+
+  const cardHover = {
+    scale: 1.01,
+    y: -1,
+    transition: {
+      duration: 0.1,
+      ease: [0.2, 0.5, 0.8, 1] as const,
+    },
+  };
+
+  return (
+    <motion.div
+      className="max-w-2xl mx-auto space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible">
+      <motion.div className="text-center" variants={cardVariants}>
+        <motion.div
+          className="flex items-center justify-center gap-6 text-sm text-muted-foreground mb-3"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.6,
+            delay: 0.2,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}>
+          <div className="flex items-center gap-2 bg-background/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50">
+            <MapPin className="w-4 h-4 text-blue-500" />
+            <span className="font-medium">{location}</span>
           </div>
-          <h3 className="text-lg font-semibold text-card-foreground">
+          <div className="flex items-center gap-2 bg-background/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50">
+            <Thermometer className="w-4 h-4 text-orange-500" />
+            <span className="font-medium">{weather.temperature}°C</span>
+          </div>
+        </motion.div>
+        <motion.h2
+          className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: 0.6,
+            delay: 0.3,
+            ease: [0.25, 0.1, 0.25, 1],
+          }}>
+          {t("todaysOutfit")}
+        </motion.h2>
+      </motion.div>
+
+      <motion.div
+        className="group outfit-card bg-gradient-to-br from-card via-card to-card/95 border border-border/80 rounded-xl p-6 shadow-lg hover:shadow-xl backdrop-blur-sm"
+        variants={cardVariants}
+        whileHover={cardHover}
+        layout>
+        <div className="flex items-center gap-3 mb-4">
+          <motion.div
+            className="w-12 h-12 bg-gradient-to-br from-blue-500/10 to-blue-600/20 rounded-xl flex items-center justify-center ring-1 ring-blue-500/20"
+            variants={iconVariants}
+            whileHover="hover">
+            <Shirt className="w-6 h-6 text-blue-600" />
+          </motion.div>
+          <h3 className="text-xl font-semibold text-card-foreground group-hover:text-blue-600 transition-colors duration-300">
             {t("mainClothing")}
           </h3>
         </div>
-        <div className="text-card-foreground leading-relaxed whitespace-pre-line">
+        <motion.div
+          className="text-card-foreground/90 leading-relaxed whitespace-pre-line"
+          initial={{ opacity: 0.8 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}>
           {sections.main || recommendation.split("\n").slice(0, 3).join("\n")}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="outfit-card bg-card border border-border rounded-lg p-6 shadow-md">
+      <motion.div
+        className="group outfit-card bg-gradient-to-br from-card via-card to-card/95 border border-border/80 rounded-xl p-6 shadow-lg hover:shadow-xl backdrop-blur-sm"
+        variants={cardVariants}
+        whileHover={cardHover}
+        layout>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-            <Umbrella className="w-5 h-5 text-accent" />
-          </div>
-          <h3 className="text-lg font-semibold text-card-foreground">
+          <motion.div
+            className="w-12 h-12 bg-gradient-to-br from-emerald-500/10 to-emerald-600/20 rounded-xl flex items-center justify-center ring-1 ring-emerald-500/20"
+            variants={iconVariants}
+            whileHover="hover">
+            <Umbrella className="w-6 h-6 text-emerald-600" />
+          </motion.div>
+          <h3 className="text-xl font-semibold text-card-foreground group-hover:text-emerald-600 transition-colors duration-300">
             {t("accessories")}
           </h3>
         </div>
-        <div className="text-card-foreground leading-relaxed whitespace-pre-line">
+        <motion.div
+          className="text-card-foreground/90 leading-relaxed whitespace-pre-line"
+          initial={{ opacity: 0.8 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}>
           {sections.accessories ||
             (language === "en"
               ? `Umbrella: ${
@@ -158,25 +245,36 @@ export default function OutfitPlan({
               : `傘: ${
                   weather.precipitation > 30 ? "必要" : "不要"
                 }\n帽子: 日差しが強い場合は推奨\nバッグ: 軽量で防水性のあるもの`)}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="outfit-card bg-card border border-border rounded-lg p-6 shadow-md">
+      <motion.div
+        className="group outfit-card bg-gradient-to-br from-card via-card to-card/95 border border-border/80 rounded-xl p-6 shadow-lg hover:shadow-xl backdrop-blur-sm"
+        variants={cardVariants}
+        whileHover={cardHover}
+        layout>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-secondary-foreground" />
-          </div>
-          <h3 className="text-lg font-semibold text-card-foreground">
+          <motion.div
+            className="w-12 h-12 bg-gradient-to-br from-amber-500/10 to-amber-600/20 rounded-xl flex items-center justify-center ring-1 ring-amber-500/20"
+            variants={iconVariants}
+            whileHover="hover">
+            <MessageCircle className="w-6 h-6 text-amber-600" />
+          </motion.div>
+          <h3 className="text-xl font-semibold text-card-foreground group-hover:text-amber-600 transition-colors duration-300">
             {t("tips")}
           </h3>
         </div>
-        <div className="text-card-foreground leading-relaxed whitespace-pre-line">
+        <motion.div
+          className="text-card-foreground/90 leading-relaxed whitespace-pre-line"
+          initial={{ opacity: 0.8 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}>
           {sections.tips ||
             (language === "en"
               ? `Humidity: ${weather.humidity}%\nWind Speed: ${weather.windSpeed}m/s\n${weather.description}`
               : `湿度: ${weather.humidity}%\n風速: ${weather.windSpeed}m/s\n${weather.description}`)}
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

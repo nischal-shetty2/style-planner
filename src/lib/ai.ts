@@ -47,10 +47,7 @@ Good examples:
 `,
     };
 
-    const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: prompts[language],
-    });
+    const text = await textGenerator({ prompts, language });
 
     return text.trim() || (language === "en" ? "Tokyo, Japan" : "Tokyo, Japan");
   } catch (error) {
@@ -58,52 +55,6 @@ Good examples:
     return "Tokyo, Japan"; // Default fallback
   }
 }
-
-export async function extractDateFromQuery(
-  query: string,
-  language: "en" | "jp" = "jp"
-): Promise<string | null> {
-  try {
-    const prompts = {
-      jp: `
-あなたはユーザーの天気に関する質問から「日付」を抽出する専門家です。
-
-ユーザーの質問: "${query}"
-
-要件:
-1) ユーザーが具体的な日付/相対日付を含めている場合のみ抽出してください。
-   例: "今日" → ISO 形式 YYYY-MM-DD / "明日" → YYYY-MM-DD / "あさって" → YYYY-MM-DD / "来週の火曜" → YYYY-MM-DD
-2) 日付が含まれていない、または曖昧で特定できない場合は、厳密に "NONE" と出力してください。
-3) 出力は日付のみ（YYYY-MM-DD）。説明や追加テキスト、記号は禁止です。
-`,
-      en: `
-You extract a specific calendar date from a weather query when the user explicitly mentions one.
-
-User question: "${query}"
-
-Requirements:
-1) If the query includes a concrete or relative date (e.g., today, tomorrow, day after tomorrow, next Tuesday), return the resolved date in strict ISO format YYYY-MM-DD.
-2) If no date is mentioned or it's ambiguous, output exactly "NONE".
-3) Output only the date string, nothing else.
-`,
-    };
-
-    const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: prompts[language],
-    });
-
-    const trimmed = text.trim();
-    if (trimmed.toUpperCase() === "NONE") return null;
-    // Basic ISO date sanity check YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-    return null;
-  } catch (error) {
-    console.error("Date extraction error:", error);
-    return null;
-  }
-}
-
 export interface ExtractedQueryInfo {
   location: string;
   date: string | null; // YYYY-MM-DD or null for today
@@ -183,10 +134,7 @@ No explanations, no code fences, no extra text.
 `,
     };
 
-    const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: prompts[language],
-    });
+    const text = await textGenerator({ prompts, language });
 
     const raw = text.trim();
     const parsed = parseJsonLoose<ExtractedQueryInfo>(raw);
@@ -292,10 +240,7 @@ Requirements:
 `,
     };
 
-    const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: prompts[language],
-    });
+    const text = await textGenerator({ prompts, language });
 
     return text;
   } catch (error) {
@@ -330,112 +275,19 @@ function getSeason(month: number, language: "en" | "jp" = "jp"): string {
   return lang.winter;
 }
 
-export async function generateActivityBasedRecommendation(
-  activity: string,
-  weatherData: WeatherData,
-  location: string,
-  language: "en" | "jp" = "jp"
-): Promise<string> {
-  try {
-    const prompts = {
-      jp: `
-活動: ${activity}
-場所: ${location}
-天気: 気温${weatherData.temperature}°C、${weatherData.condition}、降水確率${weatherData.precipitation}%
-
-この活動に適した服装をアドバイスしてください。
-
-活動別の考慮点:
-- 通勤/通学: ビジネスカジュアル、電車内の温度
-- 外出/買い物: 歩きやすさ、荷物の持ちやすさ
-- 運動/スポーツ: 動きやすさ、汗対策
-- デート: おしゃれさと実用性のバランス
-- 旅行: 荷物の軽量化、様々な場面への対応
-
-具体的で実用的なアドバイスを日本語で提供してください。
-`,
-      en: `
-Activity: ${activity}
-Location: ${location}
-Weather: Temperature ${weatherData.temperature}°C, ${weatherData.condition}, Precipitation ${weatherData.precipitation}%
-
-Please provide clothing advice suitable for this activity.
-
-Activity considerations:
-- Commuting/School: Business casual, train temperature
-- Going out/Shopping: Walkability, carrying convenience
-- Exercise/Sports: Mobility, sweat management
-- Dating: Balance of style and practicality
-- Travel: Lightweight luggage, versatility for various situations
-
-Please provide specific and practical advice in English.
-`,
-    };
-
-    const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: prompts[language],
-    });
-
-    return text;
-  } catch (error) {
-    console.error("Activity-based recommendation error:", error);
-    return language === "en"
-      ? "Could not generate activity-based clothing advice."
-      : "活動に応じた服装アドバイスを生成できませんでした。";
-  }
-}
-
-export async function generateTimeBasedRecommendation(
-  timeOfDay: string,
-  weatherData: WeatherData,
-  location: string,
-  language: "en" | "jp" = "jp"
-): Promise<string> {
-  try {
-    const prompts = {
-      jp: `
-時間帯: ${timeOfDay}
-場所: ${location}
-天気: 気温${weatherData.temperature}°C、${weatherData.condition}
-
-この時間帯の天気に適した服装をアドバイスしてください。
-
-時間帯別の考慮点:
-- 朝: 気温の変化、通勤ラッシュ
-- 昼: 日差しの強さ、活動量
-- 夕方: 気温の下降、帰宅時間
-- 夜: 冷え込み、室内外の温度差
-
-日本の気候特性を考慮した実用的なアドバイスを提供してください。
-`,
-      en: `
-Time of day: ${timeOfDay}
-Location: ${location}
-Weather: Temperature ${weatherData.temperature}°C, ${weatherData.condition}
-
-Please provide clothing advice suitable for this time of day and weather.
-
-Time-based considerations:
-- Morning: Temperature changes, rush hour commute
-- Afternoon: Sun intensity, activity level
-- Evening: Temperature drop, commute home
-- Night: Cooling down, indoor/outdoor temperature differences
-
-Please provide practical advice considering Japanese climate characteristics.
-`,
-    };
-
-    const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: prompts[language],
-    });
-
-    return text;
-  } catch (error) {
-    console.error("Time-based recommendation error:", error);
-    return language === "en"
-      ? "Could not generate time-based clothing advice."
-      : "時間帯に応じた服装アドバイスを生成できませんでした。";
-  }
+async function textGenerator({
+  prompts,
+  language,
+}: {
+  prompts: {
+    jp: string;
+    en: string;
+  };
+  language: "jp" | "en";
+}): Promise<string> {
+  const { text } = await generateText({
+    model: google("gemini-1.5-flash"),
+    prompt: prompts[language],
+  });
+  return text;
 }

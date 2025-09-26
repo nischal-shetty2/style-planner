@@ -47,6 +47,14 @@
 
 ## Tech Stack
 
+### Disclaimer: voice input only works on Google Chrome or Safari and does not work on browsers such as Brave or Firefox
+
+### 注意: 音声入力は Google Chrome または Safari でのみ動作し、Brave や Firefox などのブラウザでは動作しません
+
+---
+
+## Tech Stack
+
 - **Framework:** Next.js
 - **Styling:** Tailwind CSS, Geist UI, shadcn/ui
 - **AI & NLP:** [ai-sdk](https://sdk.vercel.ai/), Google Gemini
