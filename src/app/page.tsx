@@ -1,50 +1,74 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+// Combined browser speech fallback detection
+function shouldUseMicFallback() {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isFirefox = ua.includes("Firefox");
+  const isBrave =
+    (navigator as unknown as { brave?: { isBrave: () => boolean } }).brave &&
+    typeof (navigator as unknown as { brave?: { isBrave: () => boolean } })
+      .brave?.isBrave === "function";
+  const isSpeechSupported =
+    "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
+  // Use fallback if Brave, Firefox, or no Web Speech API
+  return isFirefox || isBrave || !isSpeechSupported;
+}
 
 // BrowserSpeechDisclaimer component (must be outside main export)
 function BrowserSpeechDisclaimer({ language }: { language: string }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const isSpeechSupported =
-      "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
-    // Detect Brave or Firefox or other unsupported browsers
-    const ua = navigator.userAgent;
-    const isBrave =
-      (navigator as any).brave &&
-      typeof (navigator as any).brave.isBrave === "function";
-    const isFirefox = ua.includes("Firefox");
+    // Check if disclaimer was dismissed before
+    const dismissed = localStorage.getItem("browserSpeechDisclaimerDismissed");
+    if (dismissed === "1") {
+      setShow(false);
+      return;
+    }
 
-    if (!isSpeechSupported || isBrave || isFirefox) {
+    if (shouldUseMicFallback()) {
       setShow(true);
     }
   }, []);
   if (!show) return null;
+
+  const handleClose = () => {
+    setShow(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("browserSpeechDisclaimerDismissed", "1");
+    }
+  };
+
   return (
-    <div className="mb-4 p-3 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-900 text-sm text-center">
-      {language === "en"
-        ? "Voice input may not work in this browser. For best results, use Google Chrome or Safari. Brave and Firefox etc do not fully support the Web Speech API."
-        : "このブラウザでは音声入力が正しく動作しない場合があります。Google ChromeまたはSafariのご利用を推奨します。Brave、FirefoxはWeb Speech APIに完全対応していません。"}
+    <div className="p-3 flex rounded-lg rounded-t-none bg-zinc-200 border text-black text-sm text-center">
+      <div className=" flex w-full justify-center">
+        {language === "en"
+          ? "In this browser, Audio is sent to the backend for transcription."
+          : "このブラウザでは、Audio は文字起こしのためにバックエンドに送信されます。"}
+      </div>
+      <div className=" flex justify-end">
+        <X size={20} className="inline cursor-pointer" onClick={handleClose} />
+      </div>
     </div>
   );
 }
 
 import MicButton from "@/components/mic-button";
 import MicButtonFallback from "@/components/mic-button-fallback";
-import { shouldUseMicFallback } from "@/lib/browser-utils";
 import StepLoader from "@/components/step-loader";
 import OutfitPlan from "@/components/outfit-plan";
 import WeatherForecast from "@/components/weather-forecast";
 import LanguageSelectionModal from "@/components/language-selection-modal";
-import { LanguageToggle, NewChatButton } from "@/components/util-buttons";
-import { Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useLanguage } from "@/context/language-context";
-import { Send, Cloud } from "lucide-react";
+import { Send, Cloud, X } from "lucide-react";
 import MapPreview from "@/components/map-preview";
+import { LanguageToggle, NewChatButton } from "@/components/util-buttons";
 
 interface Message {
   id: string;
@@ -71,7 +95,6 @@ export default function WeatherChatApp() {
   const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   // Detect browser support for Web Speech API or fallback
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -95,20 +118,15 @@ export default function WeatherChatApp() {
     }
   }, [isListening]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Autosize textarea to fit content
-  const autosizeTextarea = useCallback(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
-
-  useEffect(() => {
-    autosizeTextarea();
-  }, [inputValue, autosizeTextarea]);
-
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() || isProcessing) return;
+    if (!inputValue.trim() || isProcessing || isListening) {
+      toast(
+        language === "en"
+          ? "Cannot send message while processing or listening."
+          : "処理中または音声入力中はメッセージを送信できません。"
+      );
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -233,6 +251,7 @@ export default function WeatherChatApp() {
     setMessages,
     setInputValue,
     setIsProcessing,
+    isListening,
     setCurrentStep,
     setIsLocating,
     t,
@@ -266,7 +285,9 @@ export default function WeatherChatApp() {
         event.key === "Enter" &&
         !event.shiftKey &&
         !(event.target instanceof HTMLInputElement) &&
-        !(event.target instanceof HTMLTextAreaElement)
+        !(event.target instanceof HTMLTextAreaElement) &&
+        !isListening &&
+        !isProcessing
       ) {
         event.preventDefault(); // Important to prevent default browser behavior
         handleSendMessage();
@@ -278,14 +299,16 @@ export default function WeatherChatApp() {
     return () => {
       document.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [isProcessing, handleSendMessage]);
+  }, [isProcessing, handleSendMessage, isListening]);
 
   return (
     <div className="min-h-screen bg-background">
       <LanguageSelectionModal />
+      {/* Browser compatibility disclaimer */}
+      <BrowserSpeechDisclaimer language={language} />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex gap-4 justify-end mb-4">
+        <div className="flex gap-2 justify-end mb-4">
           <LanguageToggle />
           <NewChatButton />
         </div>
@@ -345,24 +368,16 @@ export default function WeatherChatApp() {
         {isProcessing && <StepLoader currentStep={currentStep} />}
         {!isProcessing && (
           <div className="max-w-2xl mx-auto">
-            {/* Browser compatibility disclaimer */}
-            <BrowserSpeechDisclaimer language={language} />
             <div className="flex items-center gap-3 bg-card border border-border rounded-lg p-3 shadow-md">
-              <Textarea
-                ref={textareaRef as any}
+              <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onInput={autosizeTextarea}
                 placeholder={t("inputPlaceholder")}
                 autoFocus
-                rows={1}
-                className="border-0 bg-transparent focus-visible:ring-0 text-card-foreground placeholder:text-muted-foreground max-h-48 overflow-y-auto"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!isProcessing) handleSendMessage();
-                  }
-                }}
+                className="border-0 bg-transparent focus-visible:ring-0 text-card-foreground placeholder:text-muted-foreground"
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !isProcessing && handleSendMessage()
+                }
                 disabled={isProcessing}
               />
               {useFallback ? (
@@ -391,24 +406,24 @@ export default function WeatherChatApp() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              <Button
+              <button
                 onClick={() => setInputValue(t("exampleQuery1"))}
                 className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isProcessing}>
                 {t("exampleQuery1")}
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setInputValue(t("exampleQuery2"))}
                 className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isProcessing}>
                 {t("exampleQuery2")}
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setInputValue(t("exampleQuery3"))}
                 className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isProcessing}>
                 {t("exampleQuery3")}
-              </Button>
+              </button>
             </div>
           </div>
         )}

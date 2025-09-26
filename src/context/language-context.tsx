@@ -32,7 +32,7 @@ const translations = {
     inputPlaceholder: "Ask about the weather...",
     exampleQuery1: "Visiting the SkyTree building today, what should I wear?",
     exampleQuery2: "What should I wear to McDonald's in Mangalore?",
-    exampleQuery3: "I have a meeting in Burj Khalifa.",
+    exampleQuery3: "I have a meeting in the Burj Khalifa.",
 
     // Weather forecast section
     majorCitiesWeather: "Major Cities Weather",
@@ -80,14 +80,13 @@ const translations = {
   jp: {
     // App title and description
     appTitle: "スタイルプランナー",
-    appDescription:
-      "音声またはテキストを使用して、現在地から予定について問い合わせる",
+    appDescription: "音声またはテキストで、場所と予定について問い合わせる",
 
     // Main interface
-    inputPlaceholder: "天気について聞いてください...",
-    exampleQuery1: "今日の東京の天気はどうですか？",
-    exampleQuery2: "明日の大阪は雨が降りますか？",
-    exampleQuery3: "渋谷の気温はどのくらいですか？",
+    inputPlaceholder: "天気について質問してください...",
+    exampleQuery1: "今日はスカイツリーの建物を訪ねて、何を着ればいいですか？",
+    exampleQuery2: "マンガロールのマクドナルドに行くには何を着ればいいですか？",
+    exampleQuery3: "ブルジュ・ハリファで会議があります。",
 
     // Weather forecast section
     majorCitiesWeather: "主要都市の天気",
@@ -108,7 +107,7 @@ const translations = {
     todaysOutfit: "今日のおすすめコーディネート",
     mainClothing: "メイン服装",
     accessories: "アクセサリー",
-    tips: "アドバイス・注意点",
+    tips: "アドバイス・ヒント",
 
     // Toast messages
     completed: "完了",
@@ -122,7 +121,7 @@ const translations = {
 
     // Language selection
     selectLanguage: "言語を選択",
-    selectLanguageDescription: "天気アシスタントの言語を選択してください",
+    selectLanguageDescription: "天気アシスタントの優先言語を選択してください",
     english: "English",
     japanese: "日本語",
     continue: "続行",

@@ -183,9 +183,17 @@ export default function MicButton({
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex flex-col items-center group">
       {/* Real-time transcript display */}
       <TranscriptDisplay isListening={isListening} language={language} />
+
+      {!isListening && (
+        <span
+          className="pointer-events-none mb-2 absolute -top-9 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+          style={{ minWidth: "120px" }}>
+          {language === "en" ? "Ask in English" : "英語で尋ねる"}
+        </span>
+      )}
 
       {/* Enhanced mic button */}
       <Button
@@ -195,7 +203,7 @@ export default function MicButton({
         onClick={toggleListening}
         disabled={isProcessing || disabled}
         className={`
-          relative rounded-full w-12 h-12 transition-all duration-300 overflow-hidden
+          relative rounded-full w-12 h-12 transition-all duration-300
           ${
             isListening
               ? "bg-red-500/20 text-red-600 hover:bg-red-500/30 border-2 border-red-500/50 shadow-lg shadow-red-500/25"
@@ -203,7 +211,8 @@ export default function MicButton({
               ? "bg-blue-500/20 text-blue-600 border-2 border-blue-500/50"
               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border-2 border-transparent hover:border-accent/50"
           }
-        `}>
+        `}
+        aria-label={language === "en" ? "Ask in English" : "英語で尋ねる"}>
         {/* Pulsing background effect when listening */}
         {isListening && (
           <div className="absolute inset-0 bg-red-500/10 rounded-full animate-ping" />

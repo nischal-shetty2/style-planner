@@ -7,7 +7,7 @@
 
 ## Overview
 
-**Style Planner** is an AI-powered web application that provides real-time weather information and personalized clothing suggestions for any location. Users can interact using voice or text, receive recommendations in English or Japanes. The app is built with Next.js, and leverages AI for natural language understanding and outfit planning.
+**Style Planner** is an AI-powered web application that provides real-time weather information and personalized clothing suggestions for any location. Users can interact using voice or text, receive recommendations in English or Japanese. The app is built with Next.js, and leverages AI for natural language understanding and outfit planning.
 
 ---
 

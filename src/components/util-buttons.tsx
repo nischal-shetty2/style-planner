@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Globe, Plus, RefreshCcw } from "lucide-react";
+import { Globe, Plus } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 
 export function LanguageToggle() {

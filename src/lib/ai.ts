@@ -1,86 +1,50 @@
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import Groq from "groq-sdk";
+import { z } from "zod";
+
+const groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 export async function extractLocationFromQuery(
   query: string,
   language: "en" | "jp" = "jp"
 ): Promise<string | null> {
   try {
-    const prompts = {
-      jp: `
-あなたは天気に関する質問から「実在する地理的ロケーション」を厳密に抽出する専門家です。
+    const system =
+      language === "jp"
+        ? "あなたは天気の質問から都市, 国名を厳密に一つ抽出します。ランドマークは属する都市に解決。形式は必ず City, Country。判断不能なら Tokyo, Japan。JSONのみで回答。"
+        : "Extract exactly one location in the form 'City, Country'. Resolve landmarks to their city. If undetermined, return 'Tokyo, Japan'. Respond with JSON only.";
 
-ユーザーの質問: "${query}"
+    const schema = z.object({ location: z.string() });
 
-要件:
-1) 都市名・地区名・国名・ランドマーク・施設名などが含まれる場合、必ずそのランドマーク/施設が属する「都市名, 国名」に正規化して返してください。
-   例: "スカイツリー" → "Tokyo, Japan" / "大阪城" → "Osaka, Japan"
-   例: "エッフェル塔" → "Paris, France"
-2) ランドマークのみを返さないでください。必ず「都市名, 国名」の形式にしてください。
-3) 質問が曖昧で場所が特定できない場合のみ "Tokyo, Japan" を返してください。
-4) 出力は場所名のみ。説明や追加テキスト、記号は不要です。
+    const completion = await groqClient.chat.completions.create({
+      model: GROQ_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content:
+            language === "jp"
+              ? `ユーザーの質問: "${query}"\nスキーマ: { "location": "City, Country" }`
+              : `User question: "${query}"\nSchema: { "location": "City, Country" }`,
+        },
+      ],
+    });
 
-良い例:
-- "渋谷の天気は？" → "Tokyo, Japan"
-- "京都駅は雨？" → "Kyoto, Japan"
-- "Burj Khalifa" → "Dubai, United Arab Emirates"
-- "Sky Tree building" → "Tokyo, Japan"
-- "今日は寒い？" → "Tokyo, Japan"
-`,
-      en: `
-You are an expert that extracts a precise, canonical geographic location from a weather-related query.
-
-User question: "${query}"
-
-Requirements:
-1) If the query includes a landmark/facility/area, resolve it to its governing city and country, and return strictly in the form "City, Country".
-   Examples: "Burj Khalifa" → "Dubai, United Arab Emirates"; "Eiffel Tower" → "Paris, France"; "Sky Tree building" → "Tokyo, Japan".
-2) Do NOT return just the landmark name. Always return "City, Country".
-3) Only when no location can be determined, return "Tokyo, Japan".
-4) Output the location only. No explanations, no extra text, no punctuation beyond the comma.
-
-Good examples:
-- "What's the weather in Shibuya?" → "Tokyo, Japan"
-- "Rain near Osaka Castle?" → "Osaka, Japan"
-- "Burj Khalifa tomorrow" → "Dubai, United Arab Emirates"
-- "Is it cold today?" → "Tokyo, Japan"
-`,
-    };
-
-    const text = await textGenerator({ prompts, language });
-
-    return text.trim() || (language === "en" ? "Tokyo, Japan" : "Tokyo, Japan");
+    const content = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(content);
+    const validated = schema.safeParse(parsed);
+    const location = (validated.success ? validated.data.location : "").trim();
+    return location || "Tokyo, Japan";
   } catch (error) {
     console.error("Location extraction error:", error);
-    return "Tokyo, Japan"; // Default fallback
+    return "Tokyo, Japan";
   }
 }
 export interface ExtractedQueryInfo {
   location: string;
   date: string | null; // YYYY-MM-DD or null for today
   time: string | null; // HH:mm (24h) or null if not specified
-}
-
-function parseJsonLoose<T = unknown>(raw: string): T | null {
-  try {
-    const cleaned = raw
-      .replace(/^```[a-zA-Z]*\n?/, "")
-      .replace(/```\s*$/, "")
-      .trim();
-    try {
-      return JSON.parse(cleaned);
-    } catch {}
-
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start !== -1 && end !== -1 && end > start) {
-      const slice = cleaned.slice(start, end + 1);
-      return JSON.parse(slice);
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 export async function extractLocationAndDateTime(
@@ -90,75 +54,55 @@ export async function extractLocationAndDateTime(
   nowTime24h: string
 ): Promise<ExtractedQueryInfo> {
   try {
-    const prompts = {
-      jp: `
-あなたは天気に関するユーザー質問から「都市, 国名」「日付」「時間」を抽出して正規化する専門家です。
+    const system =
+      language === "jp"
+        ? "天気の質問から『都市, 国名』『YYYY-MM-DD または null』『HH:mm または null』を抽出して返します。JSONのみで回答。"
+        : "Extract 'City, Country', optional YYYY-MM-DD date, and optional HH:mm time. Respond JSON only.";
 
-現在日付: ${nowISODate}
-現在時刻(24h): ${nowTime24h}
-ユーザーの質問: "${query}"
+    const schema = z.object({
+      location: z.string(),
+      date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable(),
+      time: z
+        .string()
+        .regex(/^\d{2}:\d{2}$/)
+        .nullable(),
+    });
 
-要件:
-1) 場所は必ず「都市名, 国名」の形式に正規化してください（例: "Tokyo, Japan"）。ランドマークは属する都市に解決。
-2) 日付/相対日付がある場合は YYYY-MM-DD に解決。無い場合は null。
-   例: 今日/明日/あさって/来週の火曜/今週末 など。
-3) 時刻/時間帯（"朝/午前/昼/午後/夕方/夜/23時" 等）がある場合は最も妥当な HH:mm(24h) に正規化。無い場合は null。
-4) 相対表現は与えられた現在日付・現在時刻を基準に解決。
-5) 出力は次の厳密なJSONのみ（コードブロックや言語タグ、追加テキストは一切禁止）:
-{
-  "location": "City, Country",
-  "date": "YYYY-MM-DD" | null,
-  "time": "HH:mm" | null
-}
-JSON以外の文字は一切出力しないでください。
-`,
-      en: `
-You extract "City, Country" location and an optional date/time from a weather query, resolving relative terms.
+    const completion = await groqClient.chat.completions.create({
+      model: GROQ_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content:
+            language === "jp"
+              ? `現在日付: ${nowISODate}\n現在時刻(24h): ${nowTime24h}\nユーザーの質問: "${query}"\nスキーマ: { "location": "City, Country", "date": "YYYY-MM-DD|null", "time": "HH:mm|null" }`
+              : `Current date: ${nowISODate}\nCurrent time (24h): ${nowTime24h}\nUser question: "${query}"\nSchema: { "location": "City, Country", "date": "YYYY-MM-DD|null", "time": "HH:mm|null" }`,
+        },
+      ],
+    });
 
-Current date: ${nowISODate}
-Current time (24h): ${nowTime24h}
-User question: "${query}"
-
-Requirements:
-1) Normalize the location to "City, Country"; resolve landmarks to their city.
-2) If a date is mentioned (today/tomorrow/day after/next Tue/this weekend), resolve to YYYY-MM-DD; else null.
-3) If a time or time-of-day is mentioned (morning/afternoon/evening/night/3pm/23:00), normalize to HH:mm 24h; else null.
-4) Resolve relatives using the provided current date/time.
-5) Output strictly this JSON only (do NOT wrap in code fences or add any extra text):
-{
-  "location": "City, Country",
-  "date": "YYYY-MM-DD" | null,
-  "time": "HH:mm" | null
-}
-No explanations, no code fences, no extra text.
-`,
-    };
-
-    const text = await textGenerator({ prompts, language });
-
-    const raw = text.trim();
-    const parsed = parseJsonLoose<ExtractedQueryInfo>(raw);
-    if (!parsed) {
-      console.error("Combined extraction JSON parse failed:", raw);
-      // Fallback: return only location using previous extractor
-      const loc = await extractLocationFromQuery(query, language);
-      return { location: loc || "Tokyo, Japan", date: null, time: null };
-    }
-
-    const location: string = (parsed?.location || "").trim();
-    const date: string | null =
-      parsed?.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date)
-        ? parsed.date
-        : null;
-    const time: string | null =
-      parsed?.time && /^\d{2}:\d{2}$/.test(parsed.time) ? parsed.time : null;
-
+    const content = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(content);
+    const validated = schema.safeParse(parsed);
+    const result: ExtractedQueryInfo = validated.success
+      ? (validated.data as ExtractedQueryInfo)
+      : { location: "", date: null, time: null };
+    const location = (result.location || "").trim();
     if (!location) {
       const loc = await extractLocationFromQuery(query, language);
-      return { location: loc || "Tokyo, Japan", date, time };
+      return {
+        location: loc || "Tokyo, Japan",
+        date: result.date,
+        time: result.time,
+      };
     }
 
-    return { location, date, time };
+    return { location, date: result.date, time: result.time };
   } catch (error) {
     console.error("Location+DateTime extraction error:", error);
     const loc = await extractLocationFromQuery(query, language);
@@ -183,66 +127,52 @@ export async function generateClothingRecommendation(
     const currentMonth = new Date().getMonth() + 1;
     const season = getSeason(currentMonth, language);
 
-    const prompts = {
-      jp: `
-あなたは日本の気候と文化に精通した服装アドバイザーです。
+    const system =
+      language === "jp"
+        ? "日本の気候と文化に適した服装アドバイスをJSONで返します。JSONのみで回答。"
+        : "Return clothing advice as strict JSON. Respond JSON only.";
 
-ユーザーの質問: "${query}"
-場所: ${location}
-現在の季節: ${season}
-天気データ:
-- 気温: ${weatherData.temperature}°C
-- 天気: ${weatherData.condition}
-- 降水確率: ${weatherData.precipitation}%
-- 風速: ${weatherData.windSpeed}m/s
-- 湿度: ${weatherData.humidity}%
+    const schema = z.object({
+      main: z.string(),
+      accessories: z.string(),
+      tips: z.string(),
+    });
 
-この情報に基づいて、日本の気候と文化に適した服装をアドバイスしてください。
+    const weatherLines = [
+      `Temperature: ${weatherData.temperature}°C`,
+      `Weather: ${String((weatherData as WeatherData).condition ?? "")}`,
+      `Precipitation: ${String(
+        (weatherData as WeatherData).precipitation ?? "0"
+      )} %`,
+      `Wind speed: ${String(
+        (weatherData as WeatherData).windSpeed ?? "0"
+      )} m/s`,
+      `Humidity: ${String((weatherData as WeatherData).humidity ?? "0")} %`,
+    ].join("\n");
 
-出力は次の厳密なJSON形式で返してください。説明やMarkdown、追加テキストは一切含めないでください。コードブロックも禁止です。
-{
-  "main": "メインの服装を日本語で詳しく1-3文で。",
-  "accessories": "アクセサリー・小物を日本語で詳しく1-3文で。",
-  "tips": "追加アドバイスを日本語で詳しく1-3文で。"
-}
+    const completion = await groqClient.chat.completions.create({
+      model: GROQ_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content:
+            language === "jp"
+              ? `ユーザーの質問: "${query}"\n場所: ${location}\n季節: ${season}\n天気データ:\n${weatherLines}\nスキーマ: { "main": string, "accessories": string, "tips": string }`
+              : `User question: "${query}"\nLocation: ${location}\nSeason: ${season}\nWeather data:\n${weatherLines}\nSchema: { "main": string, "accessories": string, "tips": string }`,
+        },
+      ],
+    });
 
-要件:
-- 値はすべてプレーンテキスト（改行可）。
-- "Explanation"などのヘッダーや番号付けを含めない。
-- JSON以外の文字は出力しない。
-`,
-      en: `
-You are a clothing advisor familiar with Japanese climate and culture.
+    const content = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(content);
+    const validated = schema.safeParse(parsed);
+    const object = validated.success
+      ? validated.data
+      : { main: "", accessories: "", tips: "" };
 
-User question: "${query}"
-Location: ${location}
-Current season: ${season}
-Weather data:
-- Temperature: ${weatherData.temperature}°C
-- Weather: ${weatherData.condition}
-- Precipitation: ${weatherData.precipitation}%
-- Wind speed: ${weatherData.windSpeed}m/s
-- Humidity: ${weatherData.humidity}%
-
-Based on this information, return clothing advice.
-
-Return output in this strict JSON format only. Do not include Markdown, code fences, numbering, or any extra text before or after JSON.
-{
-  "main": "Main clothing details in English, 1-3 sentences.",
-  "accessories": "Accessories details in English, 1-3 sentences.",
-  "tips": "Additional advice in English, 1-3 sentences."
-}
-
-Requirements:
-- Values must be plain text (newlines allowed).
-- Do not include headings like "Explanation".
-- Output JSON only.
-`,
-    };
-
-    const text = await textGenerator({ prompts, language });
-
-    return text;
+    return JSON.stringify(object);
   } catch (error) {
     console.error("Clothing recommendation error:", error);
     return language === "en"
@@ -273,21 +203,4 @@ function getSeason(month: number, language: "en" | "jp" = "jp"): string {
   if (month >= 6 && month <= 8) return lang.summer;
   if (month >= 9 && month <= 11) return lang.autumn;
   return lang.winter;
-}
-
-async function textGenerator({
-  prompts,
-  language,
-}: {
-  prompts: {
-    jp: string;
-    en: string;
-  };
-  language: "jp" | "en";
-}): Promise<string> {
-  const { text } = await generateText({
-    model: google("gemini-1.5-flash"),
-    prompt: prompts[language],
-  });
-  return text;
 }

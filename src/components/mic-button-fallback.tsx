@@ -79,12 +79,14 @@ export default function MicButtonFallback({
           toast(
             language === "en" ? "Transcription error." : "音声認識エラー。"
           );
+          console.error(err);
         } finally {
           setIsProcessing(false);
         }
       };
       mediaRecorder.start();
     } catch (err) {
+      console.error(err);
       setIsListening(false);
       toast(
         language === "en"
@@ -117,8 +119,16 @@ export default function MicButtonFallback({
   if (!mediaSupported) return null;
 
   return (
-    <div className="relative">
+    <div className="relative flex flex-col items-center group">
       <TranscriptDisplay isListening={isListening} language={language} />
+      {/* Tooltip (placed above the button for visibility) */}
+      {!isListening && (
+        <span
+          className="pointer-events-none mb-2 absolute -top-9 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+          style={{ minWidth: "120px" }}>
+          {language === "en" ? "Ask in English" : "英語で尋ねる"}
+        </span>
+      )}
       <Button
         type="button"
         variant="ghost"
@@ -126,7 +136,7 @@ export default function MicButtonFallback({
         onClick={toggleRecording}
         disabled={isProcessing || disabled}
         className={`
-          relative rounded-full w-12 h-12 transition-all duration-300 overflow-hidden
+          relative rounded-full w-12 h-12 transition-all duration-300
           ${
             isListening
               ? "bg-red-500/20 text-red-600 hover:bg-red-500/30 border-2 border-red-500/50 shadow-lg shadow-red-500/25"
@@ -134,7 +144,10 @@ export default function MicButtonFallback({
               ? "bg-blue-500/20 text-blue-600 border-2 border-blue-500/50"
               : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border-2 border-transparent hover:border-accent/50"
           }
-        `}>
+        `}
+        aria-label={
+          language === "en" ? "Speak in English" : "日本語で話してください"
+        }>
         <div className="relative z-10">
           {isProcessing ? (
             <Loader2 className="h-5 w-5 animate-spin" />
